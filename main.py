@@ -15,6 +15,10 @@ except:
 
 try:
     titulo_img = pygame.image.load("imagenes/titulo.png").convert_alpha()
+    nuevo_ancho = 450
+    nuevo_alto = int(450 * (titulo_img.get_height() / titulo_img.get_width()))
+    titulo_img = pygame.transform.smoothscale(titulo_img, (nuevo_ancho, nuevo_alto))
+
 except:
     titulo_img = None
 pantalla_inicio(ventana, fondo, titulo_img)
