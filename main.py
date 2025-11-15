@@ -1,4 +1,6 @@
 import pygame
+pygame.init()
+
 from menu_inicio import pantalla_inicio
 
 pygame.init()

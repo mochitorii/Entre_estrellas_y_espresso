@@ -1,61 +1,103 @@
 import pygame
 import sys
+import math
+from juego import bucle_juego
+from configuracion import menu_configuracion
+
+ANCHO, ALTO = 800, 600
+
+BLANCO = (255, 255, 255)
+GRIS = (180, 180, 180)
+AZUL_CLARO = (150, 180, 255)
+
+try:
+    fuente_titulo = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", 90)
+    fuente_opciones = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", 50)
+except:
+    fuente_titulo = pygame.font.Font(None, 90)
+    fuente_opciones = pygame.font.Font(None, 50)
+
+opciones = ["Iniciar partida", "Configuración", "Salir"]
+opcion_seleccionada = 0
+
+tamaño_actual = [50 for _ in opciones]
+
+t = 0
+
+fade = 255
+
 
 def pantalla_inicio(ventana, fondo=None, titulo_img=None):
-    fuente_titulo = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", 100)
-    fuente_opciones = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", 60)
-
-
+    global opcion_seleccionada, t, fade
     reloj = pygame.time.Clock()
-
-    opcion_seleccionada = 0
-    opciones = ["Iniciar partida", "Configuración", "Salir"]
 
     while True:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
             if evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_UP:
                     opcion_seleccionada = (opcion_seleccionada - 1) % len(opciones)
+
                 elif evento.key == pygame.K_DOWN:
                     opcion_seleccionada = (opcion_seleccionada + 1) % len(opciones)
+
                 elif evento.key == pygame.K_RETURN:
                     if opciones[opcion_seleccionada] == "Iniciar partida":
-                        from juego import bucle_juego
                         bucle_juego(ventana)
                     elif opciones[opcion_seleccionada] == "Configuración":
-                        from configuracion import menu_configuracion
                         menu_configuracion(ventana)
                     elif opciones[opcion_seleccionada] == "Salir":
                         pygame.quit()
                         sys.exit()
 
+        ventana.fill((20, 20, 40))
         if fondo:
             ventana.blit(fondo, (0, 0))
-        else:
-            ventana.fill((20, 20, 40))
 
         if titulo_img:
-            titulo_rect = titulo_img.get_rect(center=(ventana.get_width()//2, 180))
-            ventana.blit(titulo_img, titulo_rect)
+            nuevo_alto = 460
+            factor = nuevo_alto / titulo_img.get_height()
+            nuevo_ancho = int(titulo_img.get_width() * factor)
+            titulo_img_scaled = pygame.transform.smoothscale(titulo_img, (nuevo_ancho, nuevo_alto))
+            y_logo = ALTO // 2 - nuevo_alto // 2 - 80
+            ventana.blit(titulo_img_scaled, (50, y_logo))
         else:
-            texto_titulo = fuente_titulo.render("Entre Estrellas y Espresso", True, (100, 149, 237))
-            ventana.blit(texto_titulo, (ventana.get_width()//2 - texto_titulo.get_width()//2, 160))
+            y_logo = 50
+
+        base_x = 80
+        base_y = y_logo + (titulo_img.get_height() if titulo_img else 0) + 20
+        separacion = 80
+
+        for i in range(len(opciones)):
+            target = 62 if i == opcion_seleccionada else 50
+            if tamaño_actual[i] < target:
+                tamaño_actual[i] += 2
+            elif tamaño_actual[i] > target:
+                tamaño_actual[i] -= 2
+
+        t += 0.1
+        brillo = int(40 * math.sin(t) + 215)
+        color_sel = (brillo, brillo, 255)
 
         for i, opcion in enumerate(opciones):
-            color = (255, 255, 255) if i == opcion_seleccionada else (180, 180, 180)
-            texto = fuente_opciones.render(opcion, True, color)
-            x = ventana.get_width() // 2 - texto.get_width() // 2
-            y = 330 + i * 60
-            ventana.blit(texto, (x, y))
-            if i == opcion_seleccionada:
-                pygame.draw.polygon(ventana, (100, 149, 237), [
-                    (x - 30, y + 20),
-                    (x - 10, y + 10),
-                    (x - 10, y + 30)
-                ])
+            fuente_tmp = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", tamaño_actual[i])
+
+            sombra = fuente_tmp.render(opcion, True, (0, 0, 0))
+            ventana.blit(sombra, (base_x + 3, base_y + i * separacion + 3))
+
+            color = color_sel if i == opcion_seleccionada else BLANCO
+            texto = fuente_tmp.render(opcion, True, color)
+            ventana.blit(texto, (base_x, base_y + i * separacion))
+
+        if fade > 0:
+            overlay = pygame.Surface((ANCHO, ALTO))
+            overlay.fill((0, 0, 0))
+            overlay.set_alpha(fade)
+            ventana.blit(overlay, (0, 0))
+            fade -= 5
 
         pygame.display.flip()
         reloj.tick(60)
