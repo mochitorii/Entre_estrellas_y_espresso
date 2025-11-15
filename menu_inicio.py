@@ -2,8 +2,10 @@ import pygame
 import sys
 
 def pantalla_inicio(ventana, fondo=None, titulo_img=None):
-    fuente_titulo = pygame.font.Font(None, 90)
-    fuente_opciones = pygame.font.Font(None, 50)
+    fuente_titulo = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", 100)
+    fuente_opciones = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", 60)
+
+
     reloj = pygame.time.Clock()
 
     opcion_seleccionada = 0
