@@ -1,14 +1,11 @@
 import pygame
 import sys
 import math
-from juego import bucle_juego
 from configuracion import menu_configuracion
+from intro import intro_del_juego
 
-ANCHO, ALTO = 800, 600
-
+ANCHO, ALTO = 1920, 1080
 BLANCO = (255, 255, 255)
-GRIS = (180, 180, 180)
-AZUL_CLARO = (150, 180, 255)
 
 try:
     fuente_titulo = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", 90)
@@ -19,13 +16,9 @@ except:
 
 opciones = ["Iniciar partida", "Configuración", "Salir"]
 opcion_seleccionada = 0
-
 tamaño_actual = [50 for _ in opciones]
-
 t = 0
-
 fade = 255
-
 
 def pantalla_inicio(ventana, fondo=None, titulo_img=None):
     global opcion_seleccionada, t, fade
@@ -40,13 +33,11 @@ def pantalla_inicio(ventana, fondo=None, titulo_img=None):
             if evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_UP:
                     opcion_seleccionada = (opcion_seleccionada - 1) % len(opciones)
-
                 elif evento.key == pygame.K_DOWN:
                     opcion_seleccionada = (opcion_seleccionada + 1) % len(opciones)
-
                 elif evento.key == pygame.K_RETURN:
                     if opciones[opcion_seleccionada] == "Iniciar partida":
-                        bucle_juego(ventana)
+                        intro_del_juego(ventana, fondo)
                     elif opciones[opcion_seleccionada] == "Configuración":
                         menu_configuracion(ventana)
                     elif opciones[opcion_seleccionada] == "Salir":
@@ -61,7 +52,9 @@ def pantalla_inicio(ventana, fondo=None, titulo_img=None):
             nuevo_alto = 460
             factor = nuevo_alto / titulo_img.get_height()
             nuevo_ancho = int(titulo_img.get_width() * factor)
-            titulo_img_scaled = pygame.transform.smoothscale(titulo_img, (nuevo_ancho, nuevo_alto))
+            titulo_img_scaled = pygame.transform.smoothscale(
+                titulo_img, (nuevo_ancho, nuevo_alto)
+            )
             y_logo = ALTO // 2 - nuevo_alto // 2 - 80
             ventana.blit(titulo_img_scaled, (50, y_logo))
         else:
@@ -83,7 +76,10 @@ def pantalla_inicio(ventana, fondo=None, titulo_img=None):
         color_sel = (brillo, brillo, 255)
 
         for i, opcion in enumerate(opciones):
-            fuente_tmp = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", tamaño_actual[i])
+            try:
+                fuente_tmp = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", tamaño_actual[i])
+            except:
+                fuente_tmp = pygame.font.Font(None, tamaño_actual[i])
 
             sombra = fuente_tmp.render(opcion, True, (0, 0, 0))
             ventana.blit(sombra, (base_x + 3, base_y + i * separacion + 3))
@@ -97,7 +93,7 @@ def pantalla_inicio(ventana, fondo=None, titulo_img=None):
             overlay.fill((0, 0, 0))
             overlay.set_alpha(fade)
             ventana.blit(overlay, (0, 0))
-            fade -= 5
+            fade -= 2
 
         pygame.display.flip()
         reloj.tick(60)
