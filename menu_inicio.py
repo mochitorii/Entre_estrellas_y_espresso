@@ -20,6 +20,7 @@ tamaño_actual = [50 for _ in opciones]
 t = 0
 fade = 255
 
+
 def pantalla_inicio(ventana, fondo=None, titulo_img=None):
     global opcion_seleccionada, t, fade
     reloj = pygame.time.Clock()
@@ -37,9 +38,18 @@ def pantalla_inicio(ventana, fondo=None, titulo_img=None):
                     opcion_seleccionada = (opcion_seleccionada + 1) % len(opciones)
                 elif evento.key == pygame.K_RETURN:
                     if opciones[opcion_seleccionada] == "Iniciar partida":
-                        intro_del_juego(ventana, fondo)
+
+                        ctx = {
+                            "fondo_actual": fondo.copy() if fondo else pygame.Surface((ANCHO, ALTO)),
+                            "sprite_miel": None,
+                            "pos_miel": (80, ALTO - 900)
+                        }
+
+                        intro_del_juego(ventana, ctx)
+
                     elif opciones[opcion_seleccionada] == "Configuración":
                         menu_configuracion(ventana)
+
                     elif opciones[opcion_seleccionada] == "Salir":
                         pygame.quit()
                         sys.exit()
@@ -48,6 +58,7 @@ def pantalla_inicio(ventana, fondo=None, titulo_img=None):
         if fondo:
             ventana.blit(fondo, (0, 0))
 
+        # LOGO
         if titulo_img:
             nuevo_alto = 460
             factor = nuevo_alto / titulo_img.get_height()
@@ -64,6 +75,7 @@ def pantalla_inicio(ventana, fondo=None, titulo_img=None):
         base_y = y_logo + (titulo_img.get_height() if titulo_img else 0) + 20
         separacion = 80
 
+        # Animación de tamaño
         for i in range(len(opciones)):
             target = 62 if i == opcion_seleccionada else 50
             if tamaño_actual[i] < target:
@@ -71,6 +83,7 @@ def pantalla_inicio(ventana, fondo=None, titulo_img=None):
             elif tamaño_actual[i] > target:
                 tamaño_actual[i] -= 2
 
+        # Brillo
         t += 0.1
         brillo = int(40 * math.sin(t) + 215)
         color_sel = (brillo, brillo, 255)
@@ -88,6 +101,7 @@ def pantalla_inicio(ventana, fondo=None, titulo_img=None):
             texto = fuente_tmp.render(opcion, True, color)
             ventana.blit(texto, (base_x, base_y + i * separacion))
 
+        # Fade-in
         if fade > 0:
             overlay = pygame.Surface((ANCHO, ALTO))
             overlay.fill((0, 0, 0))

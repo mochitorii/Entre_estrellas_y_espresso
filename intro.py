@@ -1,125 +1,162 @@
 import pygame
 import sys
-import time
+import math
 from juego import bucle_juego
+
+ANCHO, ALTO = 1920, 1080
 
 BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
 
 try:
-    fuente_texto = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", 32)
+    fuente_texto = pygame.font.Font("fuentes/Fredoka-VariableFont.ttf", 42)
 except:
-    fuente_texto = pygame.font.Font(None, 32)
+    fuente_texto = pygame.font.Font(None, 42)
 
-def intro_del_juego(ventana, fondo=None):
-    ANCHO, ALTO = ventana.get_size()
 
-    if fondo is None:
-        fondo = pygame.Surface((ANCHO, ALTO))
-        fondo.fill((50, 50, 80))
+def rect_texto(ventana):
+    s = pygame.Surface((ANCHO, 250), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 200))
+    ventana.blit(s, (0, ALTO - 250))
 
-    try:
-        miel_img_normal = pygame.image.load("imagenes/miel_normal.png").convert_alpha()
-        miel_img_sorprendida = pygame.image.load("imagenes/miel_sorprendida.png").convert_alpha()
-    except:
-        miel_img_normal = pygame.Surface((150,300))
-        miel_img_normal.fill((200,200,255))
-        miel_img_sorprendida = miel_img_normal.copy()
 
-    ventana.blit(fondo, (0,0))
-    pygame.display.flip()
-    pygame.time.delay(5000)
+def escribir_texto(ventana, ctx, texto, velocidad=35):
+    rect_texto(ventana)
 
-    mostrar_texto_letra_por_letra(ventana, fondo, 
-        "Tras meses de trabajo lo logré, pude instalar mi propia cafetería, aunque no fue nada fácil.", 
-        (ANCHO//2, int(ALTO*0.8)), centrado=True)
+    x = 100
+    y = ALTO - 200
 
-    pygame.time.delay(3000)
-    indicador_espacio(ventana, fondo)
-    esperar_espacio()
-
-    mostrar_texto_letra_por_letra(ventana, fondo, 
-        "¡Ah, pero que agotamiento!", 
-        (ANCHO//2, int(ALTO*0.8)), centrado=True)
-    pygame.time.delay(500)
-
-    ventana.blit(fondo, (0,0))
-    ventana.blit(miel_img_sorprendida, (ANCHO-400, ALTO-400))
-    pygame.display.flip()
-    pygame.time.delay(500)
-
-    mostrar_texto_letra_por_letra(ventana, fondo, 
-        "Ah, ¿y esto? Por fin abrirán el local?", 
-        (ANCHO//2, int(ALTO*0.8)), centrado=True)
-    mostrar_texto_letra_por_letra(ventana, fondo, 
-        "¿Eres tú el dueño de este local?", 
-        (ANCHO//2, int(ALTO*0.85)), centrado=True)
-    
-    opciones = ["Sí, este es mi local", "No, ni siquiera sabía que se iba a instalar"]
-    seleccion = 0
+    acumulado = ""
     reloj = pygame.time.Clock()
-    elegir = True
 
-    while elegir:
+    for letra in texto:
+        acumulado += letra
+
+        ventana.blit(ctx["fondo_actual"], (0, 0))
+
+        if ctx["sprite_miel"]:
+            ventana.blit(ctx["sprite_miel"], ctx["pos_miel"])
+
+        rect_texto(ventana)
+
+        render = fuente_texto.render(acumulado, True, BLANCO)
+        ventana.blit(render, (x, y))
+
+        mostrar_indicador(ventana)
+        pygame.display.update()
+        reloj.tick(velocidad)
+
+    esperar_espacio(ventana, ctx)
+
+
+def mostrar_indicador(ventana):
+    texto = fuente_texto.render("Presiona ESPACIO para continuar", True, BLANCO)
+    t = pygame.time.get_ticks() / 300
+    alpha = int((1 + math.sin(t)) * 127)
+
+    surf = texto.copy()
+    surf.set_alpha(alpha)
+    ventana.blit(surf, (ANCHO - surf.get_width() - 60, ALTO - 60))
+
+
+def esperar_espacio(ventana, ctx):
+    reloj = pygame.time.Clock()
+
+    while True:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_UP:
-                    seleccion = (seleccion - 1) % len(opciones)
-                elif evento.key == pygame.K_DOWN:
-                    seleccion = (seleccion + 1) % len(opciones)
-                elif evento.key == pygame.K_RETURN:
-                    ventana.blit(fondo, (0,0))
-                    ventana.blit(miel_img_sorprendida, (ANCHO-400, ALTO-400))
-                    mostrar_texto_letra_por_letra(ventana, fondo, opciones[seleccion], (ANCHO//2, int(ALTO*0.8)), centrado=True)
-                    pygame.time.delay(1000)
-                    elegir = False
-                    break
+            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
+                return
 
-        ventana.blit(fondo, (0,0))
-        ventana.blit(miel_img_sorprendida, (ANCHO-400, ALTO-400))
+        ventana.blit(ctx["fondo_actual"], (0, 0))
 
-        for i, opcion in enumerate(opciones):
-            color = (200,200,255) if i == seleccion else BLANCO
-            render = fuente_texto.render(opcion, True, color)
-            ventana.blit(render, (ANCHO//2 - render.get_width()//2, int(ALTO*0.7)+i*40))
+        if ctx["sprite_miel"]:
+            ventana.blit(ctx["sprite_miel"], ctx["pos_miel"])
 
-        pygame.display.flip()
+        rect_texto(ventana)
+        mostrar_indicador(ventana)
+
+        pygame.display.update()
         reloj.tick(60)
+
+
+def cargar_sprite_proporcional(ruta, alto_deseado=700):
+    img = pygame.image.load(ruta).convert_alpha()
+    w, h = img.get_size()
+    factor = alto_deseado / h
+    return pygame.transform.scale(img, (int(w * factor), int(h * factor)))
+
+
+def intro_del_juego(ventana, ctx):
+    """ctx = { fondo_actual, sprite_miel, pos_miel }"""
+
+    ventana.blit(ctx["fondo_actual"], (0, 0))
+    pygame.display.update()
+    pygame.time.delay(1000)
+
+    escribir_texto(
+        ventana, ctx, "Tras meses de trabajo lo logré... pude instalar mi propia cafetería, aunque no fue nada fácil.", velocidad=25)
+
+    try:
+        miel_sorp = cargar_sprite_proporcional("imagenes/miel_sorprendida.png")
+        miel_habla = cargar_sprite_proporcional("imagenes/miel_hablando.png")
+    except:
+        miel_sorp = miel_habla = None
+
+    escribir_texto(
+        ventana, ctx, "¡Ah pero qué agotamiento!", velocidad=25)
+
+    ctx["sprite_miel"] = miel_sorp
+    escribir_texto(
+        ventana, ctx, "¿Ah, y esto? ¿Por fin abrirán el local?", velocidad=25)
+    
+    ctx["sprite_miel"] = miel_habla
+    escribir_texto(
+        ventana, ctx, "¿Eres tú el dueño de este local?", velocidad=25)
+
+    opcion = elegir_si_no(ventana, ctx)
+
+    if opcion == 0:
+        escribir_texto(ventana, ctx, "Sí, este es mi local.", velocidad=25)
+    else:
+        escribir_texto(ventana, ctx, "No... ni siquiera sabía que se iba a instalar.", velocidad=25)
 
     bucle_juego(ventana)
 
-def mostrar_texto_letra_por_letra(ventana, fondo, texto, pos, centrado=False, velocidad=30):
-    render = fuente_texto.render("", True, BLANCO)
-    texto_actual = ""
+
+def elegir_si_no(ventana, ctx):
+    opciones = ["Sí", "No"]
+    seleccion = 0
     reloj = pygame.time.Clock()
-    for letra in texto:
-        texto_actual += letra
-        ventana.blit(fondo, (0,0))
-        render = fuente_texto.render(texto_actual, True, BLANCO)
-        x, y = pos
-        if centrado:
-            x = x - render.get_width()//2
-        ventana.blit(render, (x,y))
-        pygame.display.flip()
-        reloj.tick(velocidad)
 
-def indicador_espacio(ventana, fondo):
-    ANCHO, ALTO = ventana.get_size()
-    render = fuente_texto.render("Presiona ESPACIO para continuar", True, BLANCO)
-    ventana.blit(fondo, (0,0))
-    ventana.blit(render, (ANCHO//2 - render.get_width()//2, int(ALTO*0.9)))
-    pygame.display.flip()
-
-def esperar_espacio():
-    esperando = True
-    while esperando:
+    while True:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
             if evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_SPACE:
-                    esperando = False
+                if evento.key == pygame.K_UP:
+                    seleccion = (seleccion - 1) % 2
+                if evento.key == pygame.K_DOWN:
+                    seleccion = (seleccion + 1) % 2
+                if evento.key == pygame.K_RETURN:
+                    return seleccion
+
+        ventana.blit(ctx["fondo_actual"], (0, 0))
+
+        if ctx["sprite_miel"]:
+            ventana.blit(ctx["sprite_miel"], ctx["pos_miel"])
+
+        rect_texto(ventana)
+        mostrar_indicador(ventana)
+
+        for i, op in enumerate(opciones):
+            color = (200, 200, 255) if i == seleccion else BLANCO
+            render = fuente_texto.render(op, True, color)
+            ventana.blit(render, (120, ALTO - 250 + i * 60))
+
+        pygame.display.update()
+        reloj.tick(60)
